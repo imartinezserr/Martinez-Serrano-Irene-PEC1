@@ -1,7 +1,10 @@
 # Martinez-Serrano-Irene-PEC1
-PEC 1 - Anàlisi de dades òmiques
+PEC 1 - Análisis de datos ómicos
 
-Aquest repositori de github conté:
-  o l' informe,
-  o l'objecte contenidor amb les dades i les metadades en format binari de R (arxiu amb extensió . Rda), o el codi R per a l' exploració de les dades o dades en format text i
-  o les metadades sobre el dataset en un arxiu markdown.
+Este repositorio de Github contiene:
+  o **Informe** del trabajo (*informe_PEC1_ADO_ims.html*),
+  o **Objeto contenedor** con los datos y los metadatos en formato binario (*data_sumexp.Rda*, *processed_data.Rda*)
+  o **Código R** para la exploración de los datos (*R_studio_code_PEC1_ims*)
+  o **Datos** en formato texto (*data_exp.txt*, *processed_data.txt*, *log_data.txt*)
+  o **Metadatos** acerca del dataset en un archivo markdown (*metadatos_Rmd*)
+
