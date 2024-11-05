@@ -1,0 +1,422 @@
+---
+title: "PEC1 - Informe (Análisis de datos ómicos)"
+author: "Irene Martínez Serrano"
+date: "1/11/2024"
+output: 
+  html_document: 
+    toc: true
+    toc_float:
+      collapsed: false
+    toc_depth: 3
+    number_sections: false
+---
+
+<style>
+    #TOC {
+      color: #022A3D;
+      font-family: Calibri;
+      font-size: 16px;  
+      border-color: #026696;
+      border-style: solid;
+      border-width: 1px;
+      padding: 5px;
+    }
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/Users/Irene/Desktop/Master/ADO/PEC1")
+
+library(BiocManager)
+if (!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
+if (!require(POMA)) BiocManager::install("POMA")
+if (!require(fobitools)) BiocManager::install("fobitools")
+
+if (!require(clusterExperiment)) BiocManager::install("clusterExperiment")
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(ggtext)
+library(patchwork)
+library(visdat)
+library(gridExtra)
+library(ggraph)
+library(factoextra)
+library(PCAtools)
+
+```
+
+
+
+# *Abstract*
+
+En esta primera entrega (PEC1), se realizará una aproximación inicial a la exploración de datos ómicos mediante el aprendizaje de herramientas fundamentales en bioinformática. El objetivo es llevar a cabo un análisis completo que incluya la selección de datos de un repositorio metabolómico y la exploración del conjunto de datos mediante análisis univariante y multivariante.
+
+Las herramientas que utilizaremos en este proceso son: **GitHub** como repositorio, **Bioconductor** para la descarga de paquetes (por ejemplo, *SummarizedExperiment*, que servirá como contenedor de nuestros datos) y **R Studio** como software estadístico. El conjunto de datos seleccionado es el *ST000291* de *Metabolomics Workbench*, correspondiente a un estudio que investigó los cambios metabólicos generales causados por el consumo de jugo de arándano o jugo de manzana utilizando un enfoque de metabolómica global.
+
+Una vez descargados los datos y almacenados en el contenedor SummarizedExperiment, fue necesario procesarlos para poder realizar un análisis adecuado.En primer lugar se realizó un análisis univariante descriptivo de los datos, y a continuación se llevó a cabo un análisis multivariante que incluyó el análisis de componentes principales (PCA y técnicas de clustering). Ambos análisis aportaron información similar, puesto que se evidenció que los tratamientos bajo los que se recogieron los datos no distinguen la agrupación de metabolitos recogidos, sinó que existe otro factor (a priori desconocido) que podría caracterizar de forma más certera 2 grupos concretos entre la totalidad de los datos recogidos. 
+
+Para más información, este informe, junto con el código y los datos empleados, será subido a un [repositorio de **GitHub**](https://github.com/imartinezserr/Martinez-Serrano-Irene-PEC1) para su revisión y referencia.
+
+
+
+# *Objetivos del estudio*  
+
+El objetivo principal de esta entrega es aprender a explorar datos ómicos mediante el uso de diversas herramientas clave en bioinformática. Como objetivos secundarios se plantean los siguientes puntos:
+
+- Buscar y seleccionar una base de datos adecuada.
+- Procesar los datos y organizar el análisis a seguir.
+- Comprender y representar adecuadamente los análisis univariante y multivariante.
+- Discutir los resultados obtenidos y las posibles limitaciones del trabajo.
+- Garantizar un código reproducible.
+- Presentar un informe legible y bien organizado
+
+
+
+# *Materiales y Métodos*
+
+A continuación se muestra un esquema del procedimiento a seguir durante esta PEC1 (*Figura 1*). 
+
+![*Figura 1*. Visión general del proceso de exploración de la PEC1.](C:/Users/Irene/Desktop/Master/ADO/PEC1/plot1-1.png)
+
+Brevemente, en el [repositorio metaboData de Github](https://github.com/nutrimetabolomics/metaboData/) hemos seleccionado específicamente el conjunto de datos [2024-fobitools-UseCase_1](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2024-fobitools-UseCase_1). Se trata de un estudio de metabolómica global que contiene tres archivos separados:
+
+- **Datos** -> 1541 variables, 45 muestras
+- **Metadata** -> 45 filas, dos columnas (nombre de la muestra, nombre del grupo)
+- Adicional: **Nombre de metabolitos** -> 1541 filas, 3 columnas (nombre original, ID de PubChem y ID de KEGG)
+
+Aunque estos datos también se encuentran en la interfaz de [*MetabolomicsWorkbench*](https://www.metabolomicsworkbench.org/databases/index.php), decidimos continuar con los datos desCargados desde **Github** puesto que estos ya estan pre-procesados. Tal y como se explica en la descripción del estudio, la parte analítica del estudio consiste en dos métodos diferentes que luego se recogen en un solo dataset puesto que son complementarios.
+
+Como se refleja en la *Figura 1*, las herramientas informáticas y bioinformáticas utilizadas son:
+
+- *Github*
+- *Bioconductor*
+- *R studio*
+
+Específicamente, de las dos últimas destacamos los paquetes de *SummarizedExperiment* (contendor de datos metabolómicos) y *POMA*, entre otros.
+
+El procedimiento general de análisis consta de diferentes pasos:
+
+1. Selección del dataset (**Github**)
+2. Contención del conjunto de datos (*SummarizedExperiment*, **Bioconductor**)
+3. Procesado del dataset (**R studio**)
+4. Exploración de los datos (**R studio**)
+  4.1 Análisis univariante
+    4.1.1 Descriptiva
+  4.2 Análisis multivariante
+    4.2.1 Análisis de componentes principales (PCA)
+    4.2.2 Clustering
+
+Cabe destacar que el punto 4 (exploración de los datos) se representará mediante gráficos y/o tablas que recogan los principales resultados del análisis.
+
+Llegados a este punto, se llevará a cabo una discusión específica de los resultados obtenidos, así como de las limitaciones que han tenido lugar durante el proceso del estudio. Finalmente, se recogeran las conclusiones finales del trabajo.
+
+Toda la información detallada anteriormente será recogida en un **informe** que se subirá a un (repositorio de GitHub específico)[https://github.com/imartinezserr/Martinez-Serrano-Irene-PEC1] junto a:
+
+- el **objeto contenedor** con los **datos** y los **metadatos** en *formato binario* (.Rda)
+- el **código R** para la exploración de los datos
+- los **datos** en formato *texto*
+- los **metadatos** acerca del dataset en un *archivo markdown*
+
+
+
+# *Resultados*
+
+## 1. Selección del dataset
+
+Este conjunto de datos se utiliza en el paquete *fobitools* de **Bioconductor**. Específicamente, tratamos con unos datos de metabolómica extraídos del repositorio de *MetabolomicsWorkbench*
+
+El dataset cuenta con datos extraídos de un estudio que investigó los cambios metabolómicos tras el consumo de jugo de arándano y jugo de manzana. Tal y como nos muestra la *Figura 2*, podemos observar que contamos con los datos de 18 mujeres que realizan 3 tratamientos distintos: 
+
+- *Baseline*
+- *Crawberry*
+- *Apple*
+
+Cabe destacar que en la segunda ronda del protocolo (*Figura 2*), hubo 3 participantes que abandonaron el estudio. Teniendo en cuenta esta información, esta es consistente con el número de variables del dataset (45). Además, en total se analizaron 1530 metabolitos.
+
+![*Figura 2*. Visión general de la recogida de datos del dataset escogido.](C:/Users/Irene/Desktop/Master/ADO/PEC1/plot1-2.png)
+
+Hemos escogido la descarga de los datos ya procesados del estudio desde el primer repositorio de Github mencionado (*Materiales y Métodos*). Para realizar este paso leeremos los archivos *.csv* con la función *read_delim* e imprimiremos los primeros 6 registros de cada conjunto de datos junto con el número de filas y de columnas recogidos en la *Tabla 1*.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+# En primer lugar leeremos los archivos descargados del repositorio
+count_data <- read_delim("features.csv", delim = ";")
+rownames(count_data) <- count_data[[1]]
+count_data <- count_data[, -1]
+count_data <- as.matrix(count_data)
+
+print('Primeros 6 registros de features.csv')
+head(count_data)
+
+sample_metadata <- read_delim("metadata.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+print('Primeros 6 registros de metadata.csv')
+head(sample_metadata)
+
+metabolite_names <- read_delim("metaboliteNames.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+print('Primeros 6 registros de metaboliteNames.csv')
+head(metabolite_names)
+
+# Todo seguido nos aseguraremos que la ordenación de los datasets sea la correcta
+stopifnot(rownames(count_data) == metabolite_names$PubChem)
+stopifnot(colnames(count_data) == sample_metadata$ID)
+
+# Finalmente crearemos una tabla con la información del número de variables y observaciones de cada conjunto de datos
+t1 <- data.frame(
+  "Conjunto de datos" = c("Features", "Metadata", "Metabolite Names"),
+  "Filas" = c(dim(count_data)[1], dim(sample_metadata)[1], dim(metabolite_names)[1]),
+  "Columnas" = c(dim(count_data)[2], dim(sample_metadata)[2], dim(metabolite_names)[2])
+)
+
+kable(t1, col.names = c("Conjunto de datos", "Filas", "Columnas"),
+      caption = "Tabla 1: Dimensiones de los conjuntos de datos descargados")
+
+
+```
+
+
+## 2. Contención del conjunto de datos
+
+Una vez tenemos los 3 datasets ubicados, procedemos a guardarlos en un objeto de tipo *SummarizedExperiment*, puesto que este nos permitirá contener los datos de forma completa para poder acceder a ellos de forma fácil.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+se <- SummarizedExperiment(
+  assays = list(counts = count_data),
+  colData = sample_metadata,
+  rowData = metabolite_names
+)
+
+rownames(se) <- metabolite_names$PubChem
+se
+
+print('Imprimimos los primeros registros de features contenido en el SummarizedExperiment')
+knitr::kable(assays(se)$counts[1:10,])
+```
+
+De todas maneras, teniendo en cuenta la metodología de la PEC1 y los recursos ofrecidos por la asignatura, crearemos el mismo objeto *SummarizedExperiment* pero con el paquete *POMA*, puesto que contiene también la función de *SummarizedExperiment* para crear este tipo de objeto. Esto nos ayudará en la exploración del dataset en los siguientes apartados.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+data_sumexp <- PomaCreateObject(metadata = sample_metadata, features = t(count_data))
+data_sumexp
+```
+
+
+## 4. Exploración de los datos
+
+En este apartado se recogen los resultados del análisis univariante y multivariante que se han realizado en el conjunto de datos escogido. 
+
+### 4.1 Análisis univariante
+#### 4.1.1 Descriptiva
+
+En primer lugar, empezaremos a explorar nuestro objeto *SummarizedExperiment* mediante un análisis univariante descriptivo de los datos con los que trabajaremos.
+
+Una vez creado el objeto contenedor de nuestros datos (*data_sumexp*), antes de iniciar la exploración del mismo es necesario estudiar la necesidad de procesar los datos. Este procesado es un paso esencial para preparar los datos para su análisis e interpretación posteriores, ya que los datos "brutos" (*raw data*) acostumbran a ser complejos.
+
+En este caso, llevaremos a cabo el procesado mediante un breve análisis descriptivo de nuestro dataset para encontrar posibles datos faltantes (o *missings*) que puedan afectar a su análisis posterior.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+# En primer lugar seleccionaremos específicamente las features de nuestro dataset
+count_df <- as.data.frame(assay(data_sumexp))
+
+print('Resumen estadístico breve de nuestras variables')
+summary(assay(data_sumexp))
+
+print('Búsqueda de valores faltantes')
+vis_miss(count_df) + 
+  ggtitle("Figura 3: Visualización de datos faltantes")
+
+```
+
+Efectivamente, en el gráfico generado podemos observar que existe un 11.8% de datos faltantes en el dataset. Esto es fácilmente solucionable con la función *PomaImpute*.
+
+```{r message=TRUE, include=FALSE}
+data_preprocessed <- data_sumexp %>%
+  PomaImpute()
+
+data_preprocessed
+```
+
+Ahora que ya tenemos una base de datos limpia, nos fijaremos en las distribuciones de los datos en cuestión. En este punto, debemos tener en cuenta que tratamos con un tamaño de muestra limitado (45) en comparación con el número de variables analizadas (1359). Por lo tanto, este estudio descriptivo lo enfocaremos a los individuos de la muestra, y no a los metabolitos como normalmente haríamos. Esto nos ayuda a poder visualizar y entender de forma más sencilla los datos. Para ello, con las funciones *PomaDensity* y *PomaBoxplots* crearemos un gráfico de distirbución y un gráfico de cajas, respectivamente.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+plot4 <- PomaDensity(data_preprocessed) +
+  ggplot2::ggtitle("Figura 4. Gráfico de dispersión de los metabolitos")
+
+plot5 <- PomaBoxplots(data_preprocessed, 
+                  x = "features") +
+  ggplot2::ggtitle("Figura 5. Gráfico de cajas de los metabolitos")
+
+grid.arrange(plot4, plot5, ncol = 2)
+```
+
+Prestando atención a las *Figuras 4 y 5* claramente detectamos una distribución irregular de los datos. No solo en el prime gráfico, sino también lo vemos en el gráfico de cajas, dónde ni siquiera podemos intuir las cajas de cada sujeto por la gran dispersión que estas presentan. Esta presentación de los datos nos ayuda a entender que será necesario transformar los datos con el objetivo de facilitar el análisis posterior. En este caso, proponemos realizar una transformación logarítmica del conjunto de datos mediante la función *PomaNorm*.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+log_transformation <- PomaNorm(data_preprocessed, method = "log")
+
+plot6 <- PomaDensity(log_transformation) +
+  ggplot2::ggtitle("Figura 6. Gráfico de dispersión de los log(metabolitos)")
+
+plot7 <- PomaBoxplots(log_transformation, 
+                  x = "samples") +
+  ggplot2::ggtitle("Figura 7. Gráfico de cajas de los log(metabolitos)")
+
+grid.arrange(plot6, plot7, ncol = 2)
+
+```
+
+Visualmente ya detectamos una mejora notable en la distribución de los datos.
+
+Cabe destacar que aunque este proceso lo estamos llevando a cabo generando un nuevo objeto con funciones del paquete *POMA*, también podemos realizar esta transformación de los datos y guardarlos en el mismo objeto creado inicialmente. En este caso, lo guardaremos como una nueva *assay*.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+assays(data_preprocessed)[["logcounts"]] <- log_transformation
+data_preprocessed
+
+```
+
+Para acabar con este análisis descriptivo, también seria interesante estudiar la distancia entre los valores de cada individuo de la muestra. Dado que no podemos graficar directamente la correlación, puesto que estamos centrándonos en los individuos, calcularemos y graficaremos estas distancias usando el paquete *factoextra*.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+mat <- t(assay(log_transformation))
+dist.obj <- get_dist(mat, method = "euclidean")
+
+fviz_dist(dist.obj, order = TRUE, show_labels = TRUE, lab_size = NULL, gradient = list(low = "red",
+mid = "white", high = "blue")) +
+  ggplot2::ggtitle("Figura 8. Gráfico de distancias")
+
+```
+
+Como podemos observar en la Figura 8, no encontramos un patrón específico que relacione agrupaciones de metabolitos con el tratamiento determinado. Podemos destacar que el gráfico de distancias parece detallar 2 perfiles distintos que no dependen del tratamiento seguido en el estudio (no todos son un tratamiento u otro, sinó que hay una mezcla). Sí que es verdad que en la zona derecha encontramos una gran correlación (distancia pequeña), que nos indicaría que las personas de esta zona son bastante similares en términos de perfil metabolómico. Sin embargo, en la zona izquierda podemos detectar distancias más grandes, hecho que evidencia un perfil distinto al primero que sería interesante continuar estudiando. 
+
+
+### 4.2 Análisis multivariante
+#### 4.2.1 Análisis de componentes principales (PCA)
+
+Como ya hemos ido explorando, nuestro conjunto de datos cuenta con 1359 metabolitos y su tamaño mostral es de 45, hallazgo que implica una dimensionalidad bastante elevada para cualquier análisis que podamos hacer. Por ese motivo, realizaremos un análisis multivariante usando el análisis de componentes principales (PCA) para reducir esta dimensionalidad y ajustar nuestra base de datos a las demandas estadísticas necesarias.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+p <- log_transformation %>%
+  PomaPCA(outcome = NULL,
+          center = TRUE,
+          scale = TRUE,
+          labels = FALSE,
+          ellipse = FALSE)
+
+plot9 <- p$eigenvalues_plot +
+  ggplot2::ggtitle("Figura 9. Varianza explicada por cada componente")
+plot10 <- p$loadings_plot +
+  ggplot2::ggtitle("Figura 10. Metabolitos con mayor peso en cada componente")
+
+grid.arrange(plot9, plot10, ncol = 2)
+
+```
+
+Y a continuación usaremos la función *pca* del paquete *PCAtools* para graficar la disposición de las dos primeras componentes en un gráfico con sus respectivas proyecciones entre tratamientos en el mismo.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+p <- pca(assay(log_transformation), metadata = colData(log_transformation), scale = TRUE, center = FALSE)
+
+biplot(p, colby = "Treatment", colkey = c(Baseline = "red", Cranberry = "blue", Apple = "green"), encircle = TRUE, encircleFill = TRUE, legendPosition = "right") +
+  ggplot2::ggtitle("Figura 11. Gráfico de las primeras 2 componentes de la PCA")
+
+```
+
+Como podemos observar en los gráficos, los resultados de la PCA apuntan hacia la misma idea que veníamos trabajando en el apartado anterior. Parece ser que el *Tratamiento* no marca una diferencia específica entre los datos de metabolitos recogidos. Esto lo vemos sobre todo al graficar las dos primeras componentes (PC1 y PC2), ya que aún señalando las proyecciones de cada tratamientos vemos que estos se encuentran en la misma zona y los datos estan considerablemente cerca. Podemos detectar una ligera desviación de los datos de *Baseline* hacia la derecha, pero aún así no se detecta una independencia clara. Esto continua en la línea de lo que se ha comentado anteriormente: parece ser que podría existir alguna otra característica que denote grupos diferentes en los datos recogidos, pero el *Tratamiento* no parece diferir entre las agrupaciones de datos recogidas.
+
+
+#### 4.2.2 Clustering
+
+Finalmente, mediante técnicas de clustering estudiaremos la posibilidad de encontrar patrones diferenciales en el perfil metabolómico de estudio.
+
+En primer lugar, realizaremos una clusterización de tipo jerárquico.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+set.seed(123)
+
+distMat <- dist(t(assay(log_transformation)))
+plot(hclust(distMat))
+```
+
+Tal y como podemos evidenciar en el dendograma, existen 2 clústers distintos en nuestro dataset. Este hallazgo continua en la línea de los resultados obtenidos en los 2 apartados anteriores, sustentando la posibilidad de que la variable categórica de tres niveles *Tratamiento* no participe en las diferencias en el perfil metabolómico de la muestra, sino otra fuente de variabilidad que caracterice dos agrupaciones de la misma muestra. 
+
+
+# *Discusión*
+
+En este trabajo nos hemos centrado en estudiar un dataset de metabolómica referente a un estudio que pretendía evaluar diferencias entre el consumo de jugo de naranja y de arándanos. Como se ha explicado en los apartados anteriores, esta PEC1 tenía como objetivo aprender diferentes herramientas bioinformáticas que nos permitan trabajar con una cantidad de datos elevada siguiendo un proceso lógico de exploración de variables. Este punto ha sido gratamente cumplido, puesto que gracias a los recursos proporcionados por la asignatura y otras fuentes de información (referenciadas en la *Bibliografía*) ha sido posible no solo realizar el proceso de exploración, sino representar los resultados de forma sencilla y, a su vez, adquirir conocimiento sobre la ejecución de estas herramientas.
+
+Centrándonos en la metodología de exploración de datos, podemos confirmar que independientemente del análisis realizado, este nos ha aportado información similar que indica la puesta en marcha de un estudio más profundo sobre los datos recogidos. Recordando un poco, contábamos con un total de 15 mujeres jóvenes sanas que se sometieron a 3 tratamientos diferentes: Inicio (*Baseline*), Jugo de arándanos (*Crawberry*) y Jugo de manzana (*Apple*) (*Figura 2*). Mediante protocolos de laboratorio se analizó el perfil metabolómico de esta muestra y se recogió en nuestra base de datos. En primera instancia esperábamos encontrar una clara diferencia, a nivel metabólico, entre los distintos tratamientos. Sin embargo, tanto el análisis univariante como el multivariante nos indican que esta variable *Tratamiento* no parece distinguir de forma específica grupos entre la totalidad de datos. Como vemos tanto en la matriz de distancias (*Figura 5*) como en la PCA (*Figura 7*), detectamos que hay un gran grupo de datos visualmente próximos, pero también parece existir otra agrupación de datos más distantes. Centrándonos en el clustering, vemos que efectivamente existen 2 agrupaciones distintas sobre los datos, y no las 3 que esperábamos por la variable *Tratamiento*. Aún siendo un análisis exploratorio, estos resultados indican la posible existencia de otra fuente de variabilidad, a priori desconocida, que podría estar involucrada en está distinción de 2 grupos en los datos estudiados. Teniendo en cuenta el diseño del estudio, esto nos podría llevar a pensar qué es probable que, independientemente del tipo de zumo, el hecho de tomarlo podría marcar una diferencia clara con el hecho de no tomar. Aún así, ya que no soy experta en el tema, pienso que se debería seguir estudiando esta posibilidad utilizando otras herramientras estadísticas.
+
+
+## Limitaciones
+
+Como en todo estudio, esta PEC1 ha enfrentado una serie de limitaciones que merece la pena destacar. En primer lugar, la elección del dataset en ambos repositorios propuestos fue un desafío. En mi caso, seleccioné un conjunto de datos del primer repositorio de **GitHub**, ya que el segundo (*metabolomicsWorkbench*) resultó difícil de entender debido a su interfaz web compleja y a la lentitud en la descarga de archivos. Sin embargo, mi elección también presentó dificultades, ya que fue necesario trabajar con el formato de las variables en cada archivo descargado en Excel debido a una leve desorganización que complicaba la creación del objeto contenedor *SummarizedExperiment*. En segundo lugar, aunque esta PEC1 me ha permitido comprender mejor los detalles de este contenedor de datos, encontré relativamente poca información sobre el paquete. Aunque en los materiales de la asignatura se mencionaba *SummarizedExperiment*, no se trabajó con ningún ejemplo. Además, el único enlace referenciado en los apuntes no funcionaba. Aun así, he aprendido a buscar en diferentes repositorios información y scripts del proceso, lo cual me ha ayudado en gran medida a fijarme más en el código y a entender mejor lo que estaba haciendo.
+
+
+![*Figura 12*. Error en el link (Actividad 1.3).](C:/Users/Irene/Desktop/Master/ADO/PEC1/Imagen1.png)
+
+## Conclusión
+
+En conclusión, en esta primera entrega de la asignatura he adquirido conocimientos tanto sobre diversas herramientas bioinformáticas como sobre el proceso previo de exploración necesario del conjunto de datos del estudio. Esto me ha ayudado a comprender en gran medida la naturaleza de este tipo de datos, así como la forma de tratarlos adecuadamente para asegurar un análisis preciso.
+
+# Descarga de datos para Github
+
+```{r eval=FALSE, include=FALSE}
+save(data_sumexp, file = "data_sumexp.Rda")
+save(data_preprocessed, file = "data_sumexp_for_analyses.Rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+write.csv(assay(data_sumexp), file = "raw_data.txt", row.names = FALSE)
+write.csv(assay(data_preprocessed), file = "processed_data.txt", row.names = FALSE)
+write.csv(assay(log_transformation), file = "log_data.txt", row.names = FALSE)
+```
+
+
+# Bibliografía
+
+[Informes en Rmarkdown](https://tutorialesmg.netlify.app/r-markdown#cap%C3%ADtulo-4--personalizaci%C3%B3n-del-informe-])
+
+[Información del dataset](https://pcastellanoescuder.github.io/fobitools/articles/MW_ST000291_enrichment.html)
+
+[Bioconductor: SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html)
+
+[SummarizedExperiment](https://bioconductor.org/packages/release/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html)
+
+[SummarizedExperiment 2](https://carpentries-incubator.github.io/bioc-project/09-summarizedexperiment.html)
+
+[Paquete POMA](https://bioconductor.org/packages/3.21/bioc/manuals/POMA/man/POMA.pdf)
+
+[POMA Workflow](https://bioconductor.org/packages/devel/bioc/vignettes/POMA/inst/doc/POMA-workflow.html)
+
+[Normalización de datos con POMA](https://www.bioconductor.org/packages/devel/bioc/vignettes/POMA/inst/doc/POMA-normalization.html)
+
+[RNA-Seq analysis with R and Bioconductor](https://uclouvain-cbio.github.io/bioinfo-training-02-rnaseq/sec-se.html)
+
+[Distancias en clustering](https://www.datanovia.com/en/lessons/clustering-distance-measures/)
+
+[Cluster Analysis](https://agroninfotech.blogspot.com/2020/06/cluster-analysis-in-r.html#google_vignette)
