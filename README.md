@@ -13,7 +13,7 @@ o **Datos** en formato texto (*data_exp.txt*, *processed_data.txt*, *log_data.tx
   
 o **Informe** del trabajo (*informe_PEC1_ADO_ims.html*)
   
-o **Código R** para la exploración de los datos (*R_studio_code_PEC1_ims*)
+o **Código R** para la exploración de los datos (*code_PEC1_ims*)
 
 o **Metadatos** acerca del dataset en un archivo markdown (*metadatos_Rmd*, *metadatos.html*)
 
