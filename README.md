@@ -5,7 +5,7 @@ Este repositorio de Github contiene 2 carpetas distintas:
 
   ***Datasets***
 
-o **Objeto contenedor** con los datos y los metadatos en formato binario (*data_sumexp.Rda*, *processed_data.Rda*)
+o **Objeto contenedor** con los datos y los metadatos en formato binario (*data_sumexp.Rda*, *data_sumexp_for_analyses.Rda*)
   
 o **Datos** en formato texto (*data_exp.txt*, *processed_data.txt*, *log_data.txt*)
 
