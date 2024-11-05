@@ -1,0 +1,86 @@
+---
+title: "PEC1 - Metadatos del dataset"
+author: "Irene Martínez Serrano"
+date: "1/11/2024"
+output: 
+  html_document: 
+    toc: true
+    toc_float:
+      collapsed: false
+    toc_depth: 3
+    number_sections: false
+---
+
+<style>
+    #TOC {
+      color: #022A3D;
+      font-family: Calibri;
+      font-size: 16px;  
+      border-color: #026696;
+      border-style: solid;
+      border-width: 1px;
+      padding: 5px;
+    }
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/Users/Irene/Desktop/Master/ADO/PEC1")
+
+library(BiocManager)
+if (!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
+if (!require(POMA)) BiocManager::install("POMA")
+if (!require(fobitools)) BiocManager::install("fobitools")
+
+if (!require(clusterExperiment)) BiocManager::install("clusterExperiment")
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(ggtext)
+library(patchwork)
+library(visdat)
+library(gridExtra)
+library(ggraph)
+library(factoextra)
+library(PCAtools)
+
+
+```
+
+# Selección de datos
+
+Brevemente, en el [repositorio metaboData de Github](https://github.com/nutrimetabolomics/metaboData/) hemos seleccionado específicamente el conjunto de datos [2024-fobitools-UseCase_1](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2024-fobitools-UseCase_1). Se trata de un estudio de metabolómica global que contiene tres archivos separados:
+
+- **Datos** -> 1541 variables, 45 muestras
+- **Metadata** -> 45 filas, dos columnas (nombre de la muestra, nombre del grupo)
+- Adicional: **Nombre de metabolitos** -> 1541 filas, 3 columnas (nombre original, ID de PubChem y ID de KEGG)
+
+Aunque estos datos también se encuentran en la interfaz de [*MetabolomicsWorkbench*](https://www.metabolomicsworkbench.org/databases/index.php), decidimos continuar con los datos desCargados desde **Github** puesto que estos ya estan pre-procesados. Tal y como se explica en la descripción del estudio, la parte analítica del estudio consiste en dos métodos diferentes que luego se recogen en un solo dataset puesto que son complementarios.
+
+# Especificaciones
+
+El dataset cuenta con datos extraídos de un estudio que investigó los cambios metabolómicos tras el consumo de jugo de arándano y jugo de manzana. Tal y como nos muestra la *Figura 2*, podemos observar que contamos con los datos de 18 mujeres que realizan 3 tratamientos distintos: 
+
+- *Baseline*
+- *Crawberry*
+- *Apple*
+
+Cabe destacar que en la segunda ronda del protocolo (*Figura 2*), hubo 3 participantes que abandonaron el estudio. Teniendo en cuenta esta información, esta es consistente con el número de variables del dataset (45). Además, en total se analizaron 1530 metabolitos.
+
+![*Figura 2*. Visión general de la recogida de datos del dataset escogido.](C:/Users/Irene/Desktop/Master/ADO/PEC1/plot1-2.png)
+
+
+Los metadatos en cuestión son:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+url <- "https://raw.githubusercontent.com/imartinezserr/Martinez-Serrano-Irene-PEC1/main/Datasets/data_sumexp.Rda"
+download.file(url, destfile = "data_sumexp.Rda", mode = "wb")
+load("data_sumexp.Rda")
+
+
+kable(colData(data_sumexp))
+```
+
